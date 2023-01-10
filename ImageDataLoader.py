@@ -1,4 +1,4 @@
-from tensorflow import keras
+from keras.preprocessing.image import ImageDataGenerator
 
 class ImageGenerator:
     def __init__(self):
