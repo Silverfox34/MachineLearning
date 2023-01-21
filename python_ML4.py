@@ -12,8 +12,8 @@ def main():
     WIDTH = 300
     HEIGHT = 300
 
-    train_data = ig.LoadImageDataFromFile("C:/Users/LS_MFE/Desktop/Lokale Dateien/rps", WIDTH, HEIGHT)
-    val_data = ig.LoadImageDataFromFile("C:/Users/LS_MFE/Desktop/Lokale Dateien/rps-test-set-rock", WIDTH, HEIGHT)
+    train_data = ig.LoadImageDataFromFile("YOUR PATH TO TRAIN DATA", WIDTH, HEIGHT)
+    val_data = ig.LoadImageDataFromFile("YOUR PATH TO VAL DATA", WIDTH, HEIGHT)
 
 
     TRAINING_DIR = "C:/Users/LS_MFE/Desktop/rps"
@@ -24,7 +24,7 @@ def main():
     train_generator = training_datagen.flow_from_directory(TRAINING_DIR, target_size=(150,150), class_mode='categorical')
     validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, target_size=(150,150), class_mode='categorical')
     
-    validataion_dataset_paper = validation_datagen.flow_from_directory("C:/Users/LS_MFE/Desktop/rps-test-set-paper", target_size=(150,150), class_mode='categorical')
+    validataion_dataset_paper = validation_datagen.flow_from_directory("YOUR PATH TO PAPER ONLY DATA, FOR TESTING PURPOSES", target_size=(150,150), class_mode='categorical')
     
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Conv2D(64, (3,3) , activation='relu', input_shape=(WIDTH, HEIGHT,3)))
