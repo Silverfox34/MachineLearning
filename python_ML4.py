@@ -12,8 +12,8 @@ def main():
     WIDTH = 300
     HEIGHT = 300
 
-    train_data = ig.LoadImageDataFromFile("C:\Users\Moritz\Desktop\Allgemeines\MachineLearning\rps", WIDTH, HEIGHT)
-    val_data = ig.LoadImageDataFromFile(":\Users\Moritz\Desktop\Allgemeines\MachineLearning\rps", WIDTH, HEIGHT)
+    train_data = ig.LoadImageDataFromFile("C:\Users\Moritz\Desktop\Allgemeines\MachineLearning\_rps", WIDTH, HEIGHT)
+    val_data = ig.LoadImageDataFromFile("C:\Users\Moritz\Desktop\Allgemeines\MachineLearning\_rps", WIDTH, HEIGHT)
 
 
     #TRAINING_DIR = "C:/Users/LS_MFE/Desktop/rps"
@@ -46,7 +46,7 @@ def main():
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics='accuracy')
 
     history = model.fit_generator(train_data, epochs=3, validation_data=val_data, verbose=1)
-    print[history]
+    print(history)
 
     #Should only detect rock here
     #classes = model.predict(val_data)
