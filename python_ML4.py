@@ -12,8 +12,8 @@ def main():
     WIDTH = 300
     HEIGHT = 300
 
-    train_data = ig.LoadImageDataFromFile("C:\Users\Moritz\Desktop\Allgemeines\MachineLearning\_rps", WIDTH, HEIGHT)
-    val_data = ig.LoadImageDataFromFile("C:\Users\Moritz\Desktop\Allgemeines\MachineLearning\_rps", WIDTH, HEIGHT)
+    train_data = ig.LoadImageDataFromFile('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/_rps', WIDTH, HEIGHT)
+    val_data = ig.LoadImageDataFromFile('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/_rps', WIDTH, HEIGHT)
 
 
     #TRAINING_DIR = "C:/Users/LS_MFE/Desktop/rps"
