@@ -5,8 +5,11 @@ from os.path import isfile, join
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import pandas as pd
+import math
+from tensorflow import keras
+import os
 
-
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 def main():
@@ -20,6 +23,7 @@ def main():
         #dif = date1-date2
         #dif = dif.days
         #print(dif)
+    
 
 
     helper_string = 'archive/Stocks/'
@@ -33,6 +37,7 @@ def main():
     counter2 = 0
     max_diff = 0
    
+    print("Reading dataset....")
     
     for file in onlyfiles:
 
@@ -80,6 +85,8 @@ def main():
 
         counter = counter + 1
     
+
+    print("Starting to create bounded data...")
     bounded_data_dict = create_bounded_data_dict(actual_data_dict, begin_date, end_date)
     assert_equal_length(bounded_data_dict)
 
@@ -102,25 +109,51 @@ def predict_stock_data(bounded_data_dict):
     
     test_labels = test_data.iloc[:, 0]
     test_data = test_data.iloc[:, 1:data_raw.columns.size]  
+    standard_dropout_factor = 0.5
 
-
-    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=2, restore_best_weights=True)
-    model = Sequential()
+    callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+    model = keras.Sequential()
     model.add(keras.layers.Dense(units = train_data_length, input_dim = train_data_length))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/2), activation='relu'))
-    model.add(keras.layers.Dropout(0.3))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/4), activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/8), activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/16), activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/32), activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/64), activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
-    model.add(keras.layers.Dense(units = math.ceil(train_data_length/128), activation='relu'))
-    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/2), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/4), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/8), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/16), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/32), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/64), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/128), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/256), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
 
     #for small datasets:
     #model.add(keras.layers.Dense(units = 16, activation = 'relu'))
@@ -133,7 +166,7 @@ def predict_stock_data(bounded_data_dict):
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, epochs = 50, callbacks=[])
+    history = model.fit(train_data, train_labels, epochs = 50, callbacks=[callback])
 
     test_pred = model.predict(test_data)
 
