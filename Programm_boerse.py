@@ -111,7 +111,7 @@ def predict_stock_data(bounded_data_dict):
     test_data = test_data.iloc[:, 1:data_raw.columns.size]  
     standard_dropout_factor = 0.5
 
-    callback = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=3, restore_best_weights=True)
     model = keras.Sequential()
     model.add(keras.layers.Dense(units = train_data_length, input_dim = train_data_length))
     model.add(keras.layers.Dense(units = math.ceil(train_data_length), activation='sigmoid'))
