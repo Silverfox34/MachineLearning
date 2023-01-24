@@ -88,8 +88,61 @@ def main():
 
 
 def predict_stock_data(bounded_data_dict):
-    data = pd.DataFrame.from_dict(bounded_data_dict)
-    print(data)
+    train_data_length = len(bounded_data_dict)-1
+    print("Trying to predict stock data...")
+    data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
+    train_data = data_raw.sample(frac=0.99)
+    
+    train_labels = train_data.iloc[:, 0]
+    test_data = data_raw.drop(train_data.index)
+
+
+    train_data = train_data.iloc[:, 1:data_raw.columns.size]
+
+    
+    test_labels = test_data.iloc[:, 0]
+    test_data = test_data.iloc[:, 1:data_raw.columns.size]  
+
+
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=2, restore_best_weights=True)
+    model = Sequential()
+    model.add(keras.layers.Dense(units = train_data_length, input_dim = train_data_length))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/2), activation='relu'))
+    model.add(keras.layers.Dropout(0.3))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/4), activation='relu'))
+    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/8), activation='relu'))
+    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/16), activation='relu'))
+    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/32), activation='relu'))
+    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/64), activation='relu'))
+    model.add(keras.layers.Dropout(0.2))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/128), activation='relu'))
+    model.add(keras.layers.Dropout(0.2))
+
+    #for small datasets:
+    #model.add(keras.layers.Dense(units = 16, activation = 'relu'))
+    #model.add(keras.layers.Dense(units = 4, activation = 'relu'))
+    #model.add(keras.layers.Dense(units = 1))
+
+
+    
+    model.add(keras.layers.Dense(units = 1))
+
+    model.compile(loss='mse', optimizer='rmsprop')
+
+    history = model.fit(train_data, train_labels, epochs = 50, callbacks=[])
+
+    test_pred = model.predict(test_data)
+
+
+
+    print(test_labels)
+    print(test_pred)
+
+
     
     
 
