@@ -154,6 +154,10 @@ def predict_stock_data(bounded_data_dict):
     model.add(keras.layers.Dropout(standard_dropout_factor))
     model.add(keras.layers.Dense(units = math.ceil(train_data_length/256), activation='sigmoid'))
     model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/512), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = math.ceil(train_data_length/1024), activation='sigmoid'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
 
     #for small datasets:
     #model.add(keras.layers.Dense(units = 16, activation = 'relu'))
