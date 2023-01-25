@@ -8,25 +8,14 @@ import pandas as pd
 import math
 from tensorflow import keras
 import os
+import time
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+#os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 def main():
 
-
-    #date1 = dt.datetime(2012, 12, 14)
-    #date2 = dt.datetime(2012, 11, 29)
-
-    #if date1>date2:
-        #print("Date 1 is later than Date 2")
-        #dif = date1-date2
-        #dif = dif.days
-        #print(dif)
-    
-
-
-    helper_string = 'archive/Stocks_less/'
+    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
@@ -85,6 +74,10 @@ def main():
             
 
         counter = counter + 1
+
+
+
+        
     
 
     print("Starting to create bounded data...")
@@ -92,6 +85,10 @@ def main():
     assert_equal_length(bounded_data_dict)
 
     predict_stock_data(bounded_data_dict)
+
+
+    time.sleep(120000)
+    print("Time is over now")
     
 
 
@@ -114,23 +111,17 @@ def predict_stock_data(bounded_data_dict):
     test_data = test_data.iloc[:, 1:data_raw.columns.size]  
     standard_dropout_factor = 0.5
 
-    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=50, restore_best_weights=True)
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
 
     model = keras.Sequential()
 
     model.add(keras.layers.Dense(units = train_data_length, input_shape = (None, train_data.shape[0], train_data.shape[1])))
 
-    model.add(keras.layers.Dense(units = 8, activation='relu'))
-    model.add(keras.layers.Dropout(standard_dropout_factor))
+    #model.add(keras.layers.Dense(units = math.ceil(math.sqrt(train_data_length)), activation='relu'))
 
-    model.add(keras.layers.Dense(units = 8, activation='relu'))
-    model.add(keras.layers.Dropout(standard_dropout_factor))
-
-    model.add(keras.layers.Dense(units = 8, activation='relu'))
-    model.add(keras.layers.Dropout(standard_dropout_factor))
-    
-    model.add(keras.layers.Dense(units = 8, activation='relu'))
-    
+    #model.add(keras.layers.Dense(units = math.ceil(math.sqrt(math.sqrt(train_data_length))), activation='relu'))
+    #model.add(keras.layers.Dense(units = 16, activation='relu'))
+    model.add(keras.layers.Dense(units = 4, activation='relu'))
 
     model.add(keras.layers.Dense(units = 1))
 
@@ -144,7 +135,7 @@ def predict_stock_data(bounded_data_dict):
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=10, epochs = 200,callbacks=[callback])
+    history = model.fit(train_data, train_labels, batch_size=20, epochs = 200,callbacks=[callback])
 
     test_pred = model.predict(test_data)
 
@@ -162,6 +153,7 @@ def plot_that(list1, list2):
     plt.plot(list1.keys() ,list1, color='r', label='labels')
     plt.plot(list1.keys() ,list2, color='b', label='pred')
     plt.show()
+    
 
 
 def assert_equal_length(bounded_data_dict):
