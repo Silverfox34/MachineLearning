@@ -26,7 +26,7 @@ def main():
     
 
 
-    helper_string = 'archive/Stocks/'
+    helper_string = 'archive/Stocks_less/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
@@ -113,17 +113,21 @@ def predict_stock_data(bounded_data_dict):
     test_data = test_data.iloc[:, 1:data_raw.columns.size]  
     standard_dropout_factor = 0.5
 
-    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=3, restore_best_weights=True)
-    
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=50, restore_best_weights=True)
+
     model = keras.Sequential()
 
-    model.add(keras.layers.Dense(units = train_data_length, input_shape = bounded_data_dict.shape))
-    model.add(keras.layers.Dense(units = 64, activation='relu'))
-    model.add(keras.layers.Dropout(standard_dropout_factor))
-    model.add(keras.layers.Dense(units = 64, activation='relu'))
-    model.add(keras.layers.Dropout(standard_dropout_factor))
-    model.add(keras.layers.Dense(units = 64, activation='relu'))
-    model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = train_data_length, input_shape = (None, train_data.shape[0], train_data.shape[1])))
+    #model.add(keras.layers.Dense(units = 64, activation='relu'))
+    #model.add(keras.layers.Dropout(standard_dropout_factor))
+    #model.add(keras.layers.Dense(units = 64, activation='relu'))
+    #model.add(keras.layers.Dropout(standard_dropout_factor))
+    #model.add(keras.layers.Dense(units = 64, activation='relu'))
+    #model.add(keras.layers.Dropout(standard_dropout_factor))
+    model.add(keras.layers.Dense(units = 8, activation='relu'))
+
+    model.add(keras.layers.Dense(units = 8, activation='relu'))
+    model.add(keras.layers.Dense(units = 8, activation='relu'))
     model.add(keras.layers.Dense(units = 8, activation='relu'))
     
 
@@ -141,7 +145,7 @@ def predict_stock_data(bounded_data_dict):
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=10, epochs = 20,callbacks=[])
+    history = model.fit(train_data, train_labels, batch_size=10, epochs = 200,callbacks=[callback])
 
     test_pred = model.predict(test_data)
 
@@ -150,9 +154,16 @@ def predict_stock_data(bounded_data_dict):
     print(test_labels)
     print(test_pred)
 
+    plot_that(test_labels, test_pred)
+
 
     
-    
+def plot_that(list1, list2):
+
+    plt.plot(list1.keys() ,list1, color='r', label='labels')
+    plt.plot(list1.keys() ,list2, color='b', label='pred')
+    plt.show()
+
 
 def assert_equal_length(bounded_data_dict):
     comparable = len(bounded_data_dict[0])
