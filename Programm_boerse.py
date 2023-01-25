@@ -67,19 +67,20 @@ def main():
         
 
         if file == "advm.us.txt":
-            figure, axis = plt.subplots(1, 2)
+            #figure, axis = plt.subplots(1, 2)
             #print(list(paddled_dict.keys())[0])
 
-            axis[0].plot(paddled_dict.keys(), paddled_dict.values())
-            axis[0].set_title("Gepaddelter Graph")
+            #axis[0].plot(paddled_dict.keys(), paddled_dict.values())
+            #axis[0].set_title("Gepaddelter Graph")
             #print(paddled_dict)
 
-            axis[1].plot(non_paddled_dict.keys(), non_paddled_dict.values())
-            axis[1].set_title("Ungepaddelter Graph")
+            #axis[1].plot(non_paddled_dict.keys(), non_paddled_dict.values())
+            #axis[1].set_title("Ungepaddelter Graph")
             #print(non_paddled_dict)
 
 
             #plt.show()
+            pass
             
             
 
