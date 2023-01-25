@@ -119,21 +119,19 @@ def predict_stock_data(bounded_data_dict):
     model = keras.Sequential()
 
     model.add(keras.layers.Dense(units = train_data_length, input_shape = (None, train_data.shape[0], train_data.shape[1])))
-    #model.add(keras.layers.Dense(units = 64, activation='relu'))
-    #model.add(keras.layers.Dropout(standard_dropout_factor))
-    #model.add(keras.layers.Dense(units = 64, activation='relu'))
-    #model.add(keras.layers.Dropout(standard_dropout_factor))
-    #model.add(keras.layers.Dense(units = 64, activation='relu'))
-    #model.add(keras.layers.Dropout(standard_dropout_factor))
-    model.add(keras.layers.Dense(units = 8, activation='relu'))
 
     model.add(keras.layers.Dense(units = 8, activation='relu'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+
     model.add(keras.layers.Dense(units = 8, activation='relu'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+
+    model.add(keras.layers.Dense(units = 8, activation='relu'))
+    model.add(keras.layers.Dropout(standard_dropout_factor))
+    
     model.add(keras.layers.Dense(units = 8, activation='relu'))
     
 
-    #model.add(keras.layers.Dense(units = 32, activation='relu'))
-    #model.add(keras.layers.Dropout(standard_dropout_factor))
     model.add(keras.layers.Dense(units = 1))
 
 
