@@ -10,12 +10,12 @@ from tensorflow import keras
 import os
 import time
 
-#os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 def main():
 
-    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks/'
+    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks_less/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
@@ -87,7 +87,7 @@ def main():
     predict_stock_data(bounded_data_dict)
 
 
-    time.sleep(120000)
+    time.sleep(120)
     print("Time is over now")
     
 
@@ -111,7 +111,7 @@ def predict_stock_data(bounded_data_dict):
     test_data = test_data.iloc[:, 1:data_raw.columns.size]  
     standard_dropout_factor = 0.5
 
-    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=15, restore_best_weights=True)
 
     model = keras.Sequential()
 
@@ -120,7 +120,7 @@ def predict_stock_data(bounded_data_dict):
     #model.add(keras.layers.Dense(units = math.ceil(math.sqrt(train_data_length)), activation='relu'))
 
     #model.add(keras.layers.Dense(units = math.ceil(math.sqrt(math.sqrt(train_data_length))), activation='relu'))
-    #model.add(keras.layers.Dense(units = 16, activation='relu'))
+    model.add(keras.layers.Dense(units = 16, activation='relu'))
     model.add(keras.layers.Dense(units = 4, activation='relu'))
 
     model.add(keras.layers.Dense(units = 1))
@@ -135,7 +135,7 @@ def predict_stock_data(bounded_data_dict):
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=20, epochs = 200,callbacks=[callback])
+    history = model.fit(train_data, train_labels, batch_size=30, epochs = 200,callbacks=[callback])
 
     test_pred = model.predict(test_data)
 
