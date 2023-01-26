@@ -1,5 +1,5 @@
 import datetime as dt
-from genericpath import exists
+
 from os import listdir
 from os.path import isfile, join
 import matplotlib.pyplot as plt
@@ -10,12 +10,13 @@ from tensorflow import keras
 import os
 import time
 
+
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 def main():
 
-    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks_less/'
+    helper_string = 'C:/Users/LS_MFE/Desktop/Lokale Dateien/MachineLearning-main/archive/Stocks/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
@@ -24,7 +25,8 @@ def main():
     index_keeper = {}
     counter = 0
     counter2 = 0
-    max_diff = 0
+    counter3 = 0
+    delimiter = 50
    
     print("Reading dataset....")
     
@@ -51,75 +53,56 @@ def main():
             actual_data_dict[counter2] = paddled_dict
             index_keeper[counter2] = file
             counter2 = counter2 + 1
-        #print(list(actual_data_dict[0].keys())[begin_date])
-        #print(actual_data_dict[0].get(begin_date))
-        
-
-        if file == "advm.us.txt":
-            #figure, axis = plt.subplots(1, 2)
-            #print(list(paddled_dict.keys())[0])
-
-            #axis[0].plot(paddled_dict.keys(), paddled_dict.values())
-            #axis[0].set_title("Gepaddelter Graph")
-            #print(paddled_dict)
-
-            #axis[1].plot(non_paddled_dict.keys(), non_paddled_dict.values())
-            #axis[1].set_title("Ungepaddelter Graph")
-            #print(non_paddled_dict)
-
-
-            #plt.show()
-            pass
-            
-            
 
         counter = counter + 1
-
-
-
         
-    
+
+        if file == "advm.us.txt" and False:
+            plot_two_dataframes_in_two_graphs(paddled_dict, non_paddled_dict, "Gepaddelter Graph", "Ungepaddelter Graph")
+
 
     print("Starting to create bounded data...")
     bounded_data_dict = create_bounded_data_dict(actual_data_dict, begin_date, end_date)
-    assert_equal_length(bounded_data_dict)
-
-    predict_stock_data(bounded_data_dict)
+    assert_equal_length(bounded_data_dict) 
 
 
-    time.sleep(120)
-    print("Time is over now")
+
+
+    number_of_split_datasets_possible = math.floor(len(bounded_data_dict)/delimiter)
+    print("Possible datasets number : " + str(number_of_split_datasets_possible))
+    print("Length of bounded data dict: " + str(len(bounded_data_dict)))
+
+    [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict)
+
+    for i in range(0, number_of_split_datasets_possible-1):
+        [test_pred, history] = predict_stock_data(train_data.iloc[: , i*delimiter : (i+1)*delimiter], train_labels, test_data.iloc[: , i*delimiter : (i+1)*delimiter], test_labels)
+        #print(keras.metrics['accuracy'])
+        print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+        counter3 = counter3+1
+        
+
+    [test_pred, history] = predict_stock_data(train_data.iloc[: , counter3*delimiter : len(bounded_data_dict)-1], train_labels, test_data.iloc[: , counter3*delimiter : len(bounded_data_dict)-1], test_labels)
+    #print(keras.metrics['accuracy'])
+
+
+    #time.sleep(120)
+    #print("Time is over now")
     
 
 
-def predict_stock_data(bounded_data_dict):
-    train_data_length = len(bounded_data_dict)-1
+def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_labels):
+    train_data_length = len(train_data.columns)
+    
     
     
     print("Trying to predict stock data...")
-    data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
-    train_data = data_raw.sample(frac=0.99)
-    
-    train_labels = train_data.iloc[:, 0]
-    test_data = data_raw.drop(train_data.index)
-
-
-    train_data = train_data.iloc[:, 1:data_raw.columns.size]
-
-    
-    test_labels = test_data.iloc[:, 0]
-    test_data = test_data.iloc[:, 1:data_raw.columns.size]  
     standard_dropout_factor = 0.5
 
-    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=15, restore_best_weights=True)
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
 
     model = keras.Sequential()
 
-    model.add(keras.layers.Dense(units = train_data_length, input_shape = (None, train_data.shape[0], train_data.shape[1])))
-
-    #model.add(keras.layers.Dense(units = math.ceil(math.sqrt(train_data_length)), activation='relu'))
-
-    #model.add(keras.layers.Dense(units = math.ceil(math.sqrt(math.sqrt(train_data_length))), activation='relu'))
+    model.add(keras.layers.Dense(units = train_data_length, input_dim = len(train_data.columns)))
     model.add(keras.layers.Dense(units = 16, activation='relu'))
     model.add(keras.layers.Dense(units = 4, activation='relu'))
 
@@ -135,7 +118,7 @@ def predict_stock_data(bounded_data_dict):
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=30, epochs = 200,callbacks=[callback])
+    history = model.fit(train_data, train_labels, batch_size=30, epochs = 400,callbacks=[callback], verbose=0)
 
     test_pred = model.predict(test_data)
 
@@ -144,15 +127,49 @@ def predict_stock_data(bounded_data_dict):
     print(test_labels)
     print(test_pred)
 
-    plot_that(test_labels, test_pred)
+    return [test_pred, history]
+    #plot_two_dataframes_in_one_graph(test_labels, test_pred)
+
+
+
+def create_metadata(bounded_data_dict):
+    data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
+    train_data = data_raw.sample(frac=0.99)
+    
+    train_labels = train_data.iloc[:, 0]
+    test_data = data_raw.drop(train_data.index)
+    train_data = train_data.iloc[:, 1:data_raw.columns.size]
+
+    test_labels = test_data.iloc[:, 0]
+    test_data = test_data.iloc[:, 1:data_raw.columns.size] 
+
+
+    return [train_data, train_labels, test_data, test_labels]
+
+
+
+
+def plot_two_dataframes_in_two_graphs(list1, list2, descr1, descr2):
+    figure, axis = plt.subplots(1, 2)
+    
+
+    axis[0].plot(list1.keys(), list1.values())
+    axis[0].set_title(descr1)
+
+    axis[1].plot(list2.keys(), list2.values())
+    axis[1].set_title(descr2)
+
+    plt.show()
 
 
     
-def plot_that(list1, list2):
+def plot_two_dataframes_in_one_graph(list1, list2):
 
     plt.plot(list1.keys() ,list1, color='r', label='labels')
     plt.plot(list1.keys() ,list2, color='b', label='pred')
     plt.show()
+
+
     
 
 
