@@ -9,6 +9,7 @@ import math
 from tensorflow import keras
 import os
 import time
+import numpy
 
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -16,17 +17,19 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def main():
 
-    helper_string = 'C:/Users/LS_MFE/Desktop/Lokale Dateien/MachineLearning-main/archive/Stocks/'
+    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
     actual_data_dict = {}
     bounded_data_dict = defaultdict(list)
+    finished_data_dict = {}
     index_keeper = {}
     counter = 0
     counter2 = 0
     counter3 = 0
-    delimiter = 50
+    counter4 = 0
+    delimiter = 60
    
     print("Reading dataset....")
     
@@ -69,25 +72,72 @@ def main():
 
 
     number_of_split_datasets_possible = math.floor(len(bounded_data_dict)/delimiter)
-    print("Possible datasets number : " + str(number_of_split_datasets_possible))
-    print("Length of bounded data dict: " + str(len(bounded_data_dict)))
 
+
+    #FIRST ITERATION
+    second_data_input = start_split_predict(number_of_split_datasets_possible, delimiter, bounded_data_dict)
+    
+
+    
+    [train_data, train_labels, test_data, test_labels] = create_metadata(second_data_input)
+    [test_pred, history] = predict_stock_data(train_data, train_labels, test_data, test_labels)
+
+
+
+    compare_results(test_labels, test_pred)
+
+
+def compare_results(test_labels, test_pred):
+    print("Prediction and Labels")
+    print(test_pred, end='    ')
+    print(test_labels)
+    
+    
+def start_split_predict(number_of_split_datasets_possible, delimiter, bounded_data_dict):
+    counter4 = 0
+    counter3 = 0
+    finished_data_dict = {}
     [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict)
-
     for i in range(0, number_of_split_datasets_possible-1):
         [test_pred, history] = predict_stock_data(train_data.iloc[: , i*delimiter : (i+1)*delimiter], train_labels, test_data.iloc[: , i*delimiter : (i+1)*delimiter], test_labels)
-        #print(keras.metrics['accuracy'])
-        print("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::")
+
+        if(test_if_bullshit_data(test_pred)):
+            finished_data_dict[counter4] = dict(enumerate(test_pred.flatten(), 1))  
+            counter4 = counter4 + 1
+
+    
         counter3 = counter3+1
-        
+    
+
+
 
     [test_pred, history] = predict_stock_data(train_data.iloc[: , counter3*delimiter : len(bounded_data_dict)-1], train_labels, test_data.iloc[: , counter3*delimiter : len(bounded_data_dict)-1], test_labels)
-    #print(keras.metrics['accuracy'])
+    if(test_if_bullshit_data(test_pred)):
+        finished_data_dict[counter4] = dict(enumerate(test_pred.flatten(), 1))
+
+    second_data_input = pd.DataFrame.from_dict(finished_data_dict, dtype='float')
+    return second_data_input
 
 
-    #time.sleep(120)
-    #print("Time is over now")
     
+
+
+def calc_mean_value(mydict, delimiter, length):
+    temp = {}
+
+    for i in range(0, len(mydict)):
+        dictionary : numpy.ndarray() = mydict[i]
+        print(dictionary) 
+
+        
+
+
+def test_if_bullshit_data(mydict):
+    length = len(mydict)
+    if(mydict[0] == mydict[1] and mydict[0] == mydict[2] and mydict[0] == mydict[3]):
+        return False
+
+    return True
 
 
 def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_labels):
@@ -103,6 +153,9 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
     model = keras.Sequential()
 
     model.add(keras.layers.Dense(units = train_data_length, input_dim = len(train_data.columns)))
+    model.add(keras.layers.Dense(units = train_data_length, activation='relu'))
+    model.add(keras.layers.Dense(units = train_data_length, activation='relu'))
+    model.add(keras.layers.Dense(units = train_data_length, activation='relu'))
     model.add(keras.layers.Dense(units = 16, activation='relu'))
     model.add(keras.layers.Dense(units = 4, activation='relu'))
 
@@ -118,14 +171,14 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=30, epochs = 400,callbacks=[callback], verbose=0)
+    history = model.fit(train_data, train_labels, batch_size=30, epochs = 1000,callbacks=[callback], verbose=0)
 
     test_pred = model.predict(test_data)
 
 
 
-    print(test_labels)
-    print(test_pred)
+    #print(test_labels)
+    #print(test_pred)
 
     return [test_pred, history]
     #plot_two_dataframes_in_one_graph(test_labels, test_pred)
@@ -134,7 +187,8 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
 def create_metadata(bounded_data_dict):
     data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
-    train_data = data_raw.sample(frac=0.99)
+    
+    train_data = data_raw.sample(frac=0.8)
     
     train_labels = train_data.iloc[:, 0]
     test_data = data_raw.drop(train_data.index)
