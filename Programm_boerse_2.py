@@ -8,13 +8,21 @@ import os
 def main():
     begin = dt.date(2023, 1, 1)
     end = dt.date(2023, 2, 1)
-    collect_data(begin, end)
+    ticker_symbols = {'AAPL', 'MSFT', 'AMZN', 'ADBE','AAT','AAU',
+                        'AB','ABBV','ABC','ABCB'}
 
+    pair_list = create_key_val_pair(ticker_symbols)
+    collect_data(begin, end, ticker_symbols, pair_list)
 
-def collect_data(begin, end):
-    ticker_symbols = {'AAPL', 'MSFT', 'AMZN', 'ADBE'}
+    
+
+def collect_data(begin, end, ticker_symbols, pair_list : dict):
     delta = end - begin
-    downloaded_data_dict = np.zeros(shape=[delta.days, len(ticker_symbols)])
+    downloaded_data_dict = np.zeros(shape=[delta.days+1, len(ticker_symbols)])
+    downloaded_data_dict[0,:] = list(pair_list.keys())
+    
+    return
+
     np.savetxt('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/'+'saved_data.csv', downloaded_data_dict, delimiter=',')
     
 
@@ -34,6 +42,16 @@ def collect_data(begin, end):
 
 
             temp = temp+dt.timedelta(1)
+
+
+def create_key_val_pair(ticker_symbols):
+    pair_list = {}
+    counter = 0
+    for item in ticker_symbols:
+        pair_list[counter] = str(item)
+        counter = counter + 1
+    
+    return pair_list
 
 
 
