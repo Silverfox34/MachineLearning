@@ -3,6 +3,7 @@ import urllib.request
 import json
 import numpy as np
 from datetime import date
+import os
 
 def main():
     begin = dt.date(2023, 1, 1)
@@ -14,6 +15,7 @@ def collect_data(begin, end):
     ticker_symbols = {'AAPL', 'MSFT', 'AMZN', 'ADBE'}
     delta = end - begin
     downloaded_data_dict = np.zeros(shape=[delta.days, len(ticker_symbols)])
+    np.savetxt('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/'+'saved_data.csv', downloaded_data_dict, delimiter=',')
     
 
     for item in ticker_symbols:
