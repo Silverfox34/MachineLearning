@@ -10,6 +10,8 @@ from tensorflow import keras
 import os
 import time
 import numpy
+from keras.layers import Bidirectional as BD
+from keras.layers import LSTM as LSTM
 
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -17,7 +19,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def main():
 
-    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks/'
+    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks_less/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
@@ -29,7 +31,7 @@ def main():
     counter2 = 0
     counter3 = 0
     counter4 = 0
-    delimiter = 60
+    delimiter = 20
    
     print("Reading dataset....")
     
@@ -68,24 +70,70 @@ def main():
     bounded_data_dict = create_bounded_data_dict(actual_data_dict, begin_date, end_date)
     assert_equal_length(bounded_data_dict) 
 
+    [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict)
+    #[test_pred, history] = predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
+    predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
+
+    #print(test_labels)
+    #print(test_pred)
 
 
-
-    number_of_split_datasets_possible = math.floor(len(bounded_data_dict)/delimiter)
+    #number_of_split_datasets_possible = math.floor(len(bounded_data_dict)/delimiter)
 
 
     #FIRST ITERATION
-    second_data_input = start_split_predict(number_of_split_datasets_possible, delimiter, bounded_data_dict)
+    #second_data_input = start_split_predict(number_of_split_datasets_possible, delimiter, bounded_data_dict)
     
 
     
-    [train_data, train_labels, test_data, test_labels] = create_metadata(second_data_input)
-    [test_pred, history] = predict_stock_data(train_data, train_labels, test_data, test_labels)
+    #[train_data, train_labels, test_data, test_labels] = create_metadata(second_data_input)
+    #[test_pred, history] = predict_stock_data(train_data, train_labels, test_data, test_labels)
 
 
 
-    compare_results(test_labels, test_pred)
+    #compare_results(test_labels, test_pred)
 
+
+def predict_stock_data_bidirectional(train_data : pd.DataFrame, train_labels, test_data, test_labels):
+    train_data_X_length = len(train_data.columns)
+    train_data_Y_length = len(train_data.index)
+
+    
+    print("Trying to predict stock data...")
+    standard_dropout_factor = 0.25
+
+    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
+
+    model = keras.Sequential()
+    model.add(BD(LSTM(units=train_data_X_length, return_sequences=True), merge_mode='concat', input_shape=(train_data_X_length, train_data_Y_length)))
+    model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
+    model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
+    model.add(BD(LSTM(units=4, activation='relu', return_sequences=True)))
+    model.add(keras.layers.Dense(units = 1))
+
+
+    #model.add(keras.layers.Dense(units = train_data_X_length, input_dim = len(train_data.columns)))
+    #model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
+    #model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
+    #model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
+    #model.add(keras.layers.Dense(units = 16, activation='relu'))
+    #model.add(keras.layers.Dense(units = 4, activation='relu'))
+    #model.add(keras.layers.Dense(units = 1))
+
+
+    model.compile(loss='mse', optimizer='rmsprop')
+    history = model.fit(train_data, train_labels, batch_size=5, epochs = 1000, callbacks=[callback], verbose=1)
+
+    #test_pred = model.predict(test_data)
+
+
+
+    #print(test_labels)
+    #print(test_pred)
+
+    
+    #plot_two_dataframes_in_one_graph(test_labels, test_pred)
+    #return [test_pred, history]
 
 def compare_results(test_labels, test_pred):
     print("Prediction and Labels")
@@ -117,8 +165,6 @@ def start_split_predict(number_of_split_datasets_possible, delimiter, bounded_da
 
     second_data_input = pd.DataFrame.from_dict(finished_data_dict, dtype='float')
     return second_data_input
-
-
     
 
 
@@ -128,8 +174,6 @@ def calc_mean_value(mydict, delimiter, length):
     for i in range(0, len(mydict)):
         dictionary : numpy.ndarray() = mydict[i]
         print(dictionary) 
-
-        
 
 
 def test_if_bullshit_data(mydict):
@@ -141,7 +185,7 @@ def test_if_bullshit_data(mydict):
 
 
 def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_labels):
-    train_data_length = len(train_data.columns)
+    train_data_X_length = len(train_data.columns)
     
     
     
@@ -152,10 +196,10 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
     model = keras.Sequential()
 
-    model.add(keras.layers.Dense(units = train_data_length, input_dim = len(train_data.columns)))
-    model.add(keras.layers.Dense(units = train_data_length, activation='relu'))
-    model.add(keras.layers.Dense(units = train_data_length, activation='relu'))
-    model.add(keras.layers.Dense(units = train_data_length, activation='relu'))
+    model.add(keras.layers.Dense(units = train_data_X_length, input_dim = len(train_data.columns)))
+    model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
+    model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
+    model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
     model.add(keras.layers.Dense(units = 16, activation='relu'))
     model.add(keras.layers.Dense(units = 4, activation='relu'))
 
@@ -180,15 +224,16 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
     #print(test_labels)
     #print(test_pred)
 
-    return [test_pred, history]
+    
     #plot_two_dataframes_in_one_graph(test_labels, test_pred)
+    return [test_pred, history]
 
 
 
 def create_metadata(bounded_data_dict):
     data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
     
-    train_data = data_raw.sample(frac=0.8)
+    train_data = data_raw.sample(frac=0.99)
     
     train_labels = train_data.iloc[:, 0]
     test_data = data_raw.drop(train_data.index)
