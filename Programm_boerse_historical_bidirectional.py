@@ -32,6 +32,7 @@ def main():
     counter3 = 0
     counter4 = 0
     delimiter = 20
+    pivot = 5
    
     print("Reading dataset....")
     
@@ -67,12 +68,24 @@ def main():
 
 
     print("Starting to create bounded data...")
-    bounded_data_dict = create_bounded_data_dict(actual_data_dict, begin_date, end_date)
+    bounded_data_dict : dict = create_bounded_data_dict(actual_data_dict, begin_date, end_date)
+    
     assert_equal_length(bounded_data_dict) 
+    new_dict = {}
+    [new_begin, bounded_data_dict]= reshape_bounded_data_dict(bounded_data_dict, pivot, begin_date)
+    begin_date = new_begin
+    
+    bounded_data_dict = reorder_bounded_data_dict(bounded_data_dict, pivot, begin_date)
+    #print(bounded_data_dict)
 
     [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict)
+    print(train_data.shape)
+    
+
+
+
     #[test_pred, history] = predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
-    predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
+    #predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
 
     #print(test_labels)
     #print(test_pred)
@@ -92,6 +105,63 @@ def main():
 
 
     #compare_results(test_labels, test_pred)
+
+
+def reorder_bounded_data_dict(bounded_data_dict, pivot : int, begin_date : dt.datetime):
+    X_length = len(bounded_data_dict[0])
+    Y_length = len(bounded_data_dict)
+    mydict = {}
+    
+    
+    if(assert_correct_modulo(bounded_data_dict, pivot) == False):
+        print("Data dict is not in shape for pivot " + str(pivot))
+        raise Exception
+
+    temp = begin_date
+
+    for i in range(0, Y_length):
+        for key in range(0, int(X_length/pivot)):
+
+            time_dict = {}
+            for time in range(0, pivot):
+               time_dict[time] = bounded_data_dict[i].get(temp)
+               temp = temp + dt.timedelta(days=1)
+            mydict[key] = time_dict
+
+        bounded_data_dict[i] = mydict
+
+        mydict = {}
+        temp = begin_date
+    
+    return bounded_data_dict
+            
+        
+
+
+def assert_correct_modulo(bounded_data_dict, pivot):
+    X_length = len(bounded_data_dict[0])
+    Y_length = len(bounded_data_dict)
+
+    for k in range(0, Y_length):
+        if(len(bounded_data_dict[k]) % pivot != 0):
+            return False
+    
+    return True
+
+
+
+def reshape_bounded_data_dict(bounded_data_dict : dict, pivot, begin : dt.datetime):
+    X_length = len(bounded_data_dict[0])
+    Y_length = len(bounded_data_dict)
+
+    modulo = X_length % pivot
+    new_begin = begin + dt.timedelta(days=modulo)
+    for k in range(0, Y_length):
+        for i in range(0, modulo):
+            delta = begin + dt.timedelta(days=i)
+            bounded_data_dict[k].pop(delta)
+
+    return [new_begin, bounded_data_dict]
 
 
 def predict_stock_data_bidirectional(train_data : pd.DataFrame, train_labels, test_data, test_labels):
@@ -173,7 +243,7 @@ def calc_mean_value(mydict, delimiter, length):
 
     for i in range(0, len(mydict)):
         dictionary : numpy.ndarray() = mydict[i]
-        print(dictionary) 
+        #print(dictionary) 
 
 
 def test_if_bullshit_data(mydict):
@@ -231,12 +301,17 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
 
 def create_metadata(bounded_data_dict):
+
     data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
+    train_data_X_length = len(data_raw.columns)
+    train_data_Y_length = len(data_raw.index)
     
-    train_data = data_raw.sample(frac=0.99)
+    dif = 15
+    
+    train_data = data_raw.iloc[0:train_data_Y_length - dif, :]
     
     train_labels = train_data.iloc[:, 0]
-    test_data = data_raw.drop(train_data.index)
+    test_data = data_raw.iloc[train_data_Y_length - dif : train_data_Y_length, :]
     train_data = train_data.iloc[:, 1:data_raw.columns.size]
 
     test_labels = test_data.iloc[:, 0]
