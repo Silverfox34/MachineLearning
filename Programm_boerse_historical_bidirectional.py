@@ -12,6 +12,8 @@ import time
 import numpy
 from keras.layers import Bidirectional as BD
 from keras.layers import LSTM as LSTM
+import xarray as xr
+import tensorflow as tf
 
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -79,15 +81,16 @@ def main():
     #print(bounded_data_dict)
 
     [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict)
-    print(train_data.shape)
     
+    
+    #print(bounded_data_dict)
 
 
 
-    #[test_pred, history] = predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
-    #predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels)
+    #[test_pred, history] = predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels, pivot)
+    predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels, pivot)
 
-    #print(test_labels)
+    
     #print(test_pred)
 
 
@@ -122,11 +125,15 @@ def reorder_bounded_data_dict(bounded_data_dict, pivot : int, begin_date : dt.da
     for i in range(0, Y_length):
         for key in range(0, int(X_length/pivot)):
 
-            time_dict = {}
+            time_dict = []
+           
             for time in range(0, pivot):
-               time_dict[time] = bounded_data_dict[i].get(temp)
-               temp = temp + dt.timedelta(days=1)
-            mydict[key] = time_dict
+                value = bounded_data_dict[i].get(temp)
+               
+                time_dict.append(value)
+                temp = temp + dt.timedelta(days=1)
+            
+            mydict[key] = tf.convert_to_tensor(time_dict, dtype=tf.float32)
 
         bounded_data_dict[i] = mydict
 
@@ -164,35 +171,30 @@ def reshape_bounded_data_dict(bounded_data_dict : dict, pivot, begin : dt.dateti
     return [new_begin, bounded_data_dict]
 
 
-def predict_stock_data_bidirectional(train_data : pd.DataFrame, train_labels, test_data, test_labels):
-    train_data_X_length = len(train_data.columns)
-    train_data_Y_length = len(train_data.index)
+def predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels, pivot):
+    train_data_X_length = train_data.shape[1]
+    train_data_Y_length = train_data.shape[0]
 
+    #for dataframe
+    #train_data_X_length = len(train_data)
+    #train_data_Y_length = len(train_data.index)
+    
     
     print("Trying to predict stock data...")
     standard_dropout_factor = 0.25
 
-    callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
+    early_stop = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
 
     model = keras.Sequential()
-    model.add(BD(LSTM(units=train_data_X_length, return_sequences=True), merge_mode='concat', input_shape=(train_data_X_length, train_data_Y_length)))
+    model.add(BD(LSTM(units=train_data_X_length, return_sequences=True), merge_mode='concat', batch_input_shape=(None, train_data_X_length, pivot)))
     model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
     model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
-    model.add(BD(LSTM(units=4, activation='relu', return_sequences=True)))
-    model.add(keras.layers.Dense(units = 1))
+    model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
+    model.add(keras.layers.Dense(units = pivot))
 
-
-    #model.add(keras.layers.Dense(units = train_data_X_length, input_dim = len(train_data.columns)))
-    #model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
-    #model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
-    #model.add(keras.layers.Dense(units = train_data_X_length, activation='relu'))
-    #model.add(keras.layers.Dense(units = 16, activation='relu'))
-    #model.add(keras.layers.Dense(units = 4, activation='relu'))
-    #model.add(keras.layers.Dense(units = 1))
-
-
+  
     model.compile(loss='mse', optimizer='rmsprop')
-    history = model.fit(train_data, train_labels, batch_size=5, epochs = 1000, callbacks=[callback], verbose=1)
+    history = model.fit(x=train_data, y=train_labels, validation_data=(test_data, test_labels), epochs = 1000, callbacks=[early_stop], verbose=1)
 
     #test_pred = model.predict(test_data)
 
@@ -200,7 +202,7 @@ def predict_stock_data_bidirectional(train_data : pd.DataFrame, train_labels, te
 
     #print(test_labels)
     #print(test_pred)
-
+    return [None, None]
     
     #plot_two_dataframes_in_one_graph(test_labels, test_pred)
     #return [test_pred, history]
@@ -285,7 +287,7 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=30, epochs = 1000,callbacks=[callback], verbose=0)
+    history = model.fit(train_data, train_labels, batch_size=30, epochs = 1000, callbacks=[callback], verbose=0)
 
     test_pred = model.predict(test_data)
 
@@ -300,9 +302,10 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
 
 
-def create_metadata(bounded_data_dict):
-
+def create_metadata(bounded_data_dict : dict):
+    
     data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
+    
     train_data_X_length = len(data_raw.columns)
     train_data_Y_length = len(data_raw.index)
     
@@ -317,6 +320,11 @@ def create_metadata(bounded_data_dict):
     test_labels = test_data.iloc[:, 0]
     test_data = test_data.iloc[:, 1:data_raw.columns.size] 
 
+    #train_data = numpy.array(train_data)
+    #train_labels = numpy.array(train_labels)
+    #test_data = numpy.array(test_data)
+    #test_labels = numpy.array(test_labels)
+    
 
     return [train_data, train_labels, test_data, test_labels]
 
