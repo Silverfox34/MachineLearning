@@ -5,7 +5,16 @@ from keras.layers import LSTM as LSTM
 
 def main():
     time_steps = 3
+
+    #this one here
     data = np.array([
+        
+                    [[1],[2],[3], [2],[3],[4], [3],[4],[5], [4],[5],[6]],
+                    [[1],[2],[3], [2],[3],[4], [3],[4],[5], [4],[5],[6]]
+                    
+                    ])
+
+    data2 = np.array([
         
                     [[1,2,3, 2,3,4, 3,4,5, 4,5,6],
 
@@ -15,13 +24,11 @@ def main():
 
                     [10,11,12,11,12,13,12,13,14,13,14,15]],
 
-                    [[1,2,3, 2,3,4, 3,4,5, 4,5,6],
-
-                    [10,11,12,11,12,13,12,13,14,13,14,15]]
                     
                     ])
-    print(data.shape)
 
+    print(np.random.rand(3,12,1))
+    print(data.shape)
     return
 
     #sequences = []
