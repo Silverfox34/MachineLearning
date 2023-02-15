@@ -21,7 +21,7 @@ def collect_data(begin, end, ticker_symbols, pair_list : dict):
     downloaded_data_dict = np.zeros(shape=[delta.days+1, len(ticker_symbols)])
     downloaded_data_dict[0,:] = list(pair_list.keys())
     
-    return
+    
 
     np.savetxt('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/'+'saved_data.csv', downloaded_data_dict, delimiter=',')
     

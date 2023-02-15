@@ -71,16 +71,17 @@ def main():
 
     print("Starting to create bounded data...")
     bounded_data_dict : dict = create_bounded_data_dict(actual_data_dict, begin_date, end_date)
-    
+
+
     assert_equal_length(bounded_data_dict) 
     new_dict = {}
     [new_begin, bounded_data_dict]= reshape_bounded_data_dict(bounded_data_dict, pivot, begin_date)
     begin_date = new_begin
     
     bounded_data_dict = reorder_bounded_data_dict(bounded_data_dict, pivot, begin_date)
-    #print(bounded_data_dict)
-
-    [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict)
+    
+    
+    [train_data, train_labels, test_data, test_labels] = create_metadata(bounded_data_dict, pivot)
     
     
     #print(bounded_data_dict)
@@ -88,7 +89,7 @@ def main():
 
 
     #[test_pred, history] = predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels, pivot)
-    predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels, pivot)
+    #predict_stock_data_bidirectional(train_data, train_labels, test_data, test_labels, pivot)
 
     
     #print(test_pred)
@@ -113,7 +114,7 @@ def main():
 def reorder_bounded_data_dict(bounded_data_dict, pivot : int, begin_date : dt.datetime):
     X_length = len(bounded_data_dict[0])
     Y_length = len(bounded_data_dict)
-    mydict = {}
+    
     
     
     if(assert_correct_modulo(bounded_data_dict, pivot) == False):
@@ -121,29 +122,26 @@ def reorder_bounded_data_dict(bounded_data_dict, pivot : int, begin_date : dt.da
         raise Exception
 
     temp = begin_date
+    temp_dict = {}
 
     for i in range(0, Y_length):
         for key in range(0, int(X_length/pivot)):
 
-            time_dict = []
+            time_dict = {}
            
-            for time in range(0, pivot):
-                value = bounded_data_dict[i].get(temp)
-               
-                time_dict.append(value)
+            for time in range(0, pivot):       
+                time_dict[time] = bounded_data_dict[i].get(temp)
                 temp = temp + dt.timedelta(days=1)
-            
-            mydict[key] = tf.convert_to_tensor(time_dict, dtype=tf.float32)
 
-        bounded_data_dict[i] = mydict
+            temp_dict[key] = time_dict
 
-        mydict = {}
+        bounded_data_dict[i] = temp_dict
+        temp_dict = {}
+
+        
         temp = begin_date
     
     return bounded_data_dict
-            
-        
-
 
 def assert_correct_modulo(bounded_data_dict, pivot):
     X_length = len(bounded_data_dict[0])
@@ -154,8 +152,6 @@ def assert_correct_modulo(bounded_data_dict, pivot):
             return False
     
     return True
-
-
 
 def reshape_bounded_data_dict(bounded_data_dict : dict, pivot, begin : dt.datetime):
     X_length = len(bounded_data_dict[0])
@@ -186,11 +182,16 @@ def predict_stock_data_bidirectional(train_data, train_labels, test_data, test_l
     early_stop = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
 
     model = keras.Sequential()
-    model.add(BD(LSTM(units=train_data_X_length, return_sequences=True), merge_mode='concat', batch_input_shape=(None, train_data_X_length, pivot)))
-    model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
-    model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
-    model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
-    model.add(keras.layers.Dense(units = pivot))
+    #model.add(BD(LSTM(units=train_data_X_length, return_sequences=True), merge_mode='concat', batch_input_shape=(None, train_data_X_length, pivot)))
+    #model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
+    #model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
+    #model.add(BD(LSTM(units=8, activation='relu', return_sequences=True)))
+    #model.add(keras.layers.Dense(units = pivot))
+
+    model.add(LSTM(units=train_data_X_length, input_shape=(pivot, 1), return_sequences=True, activation='relu'))
+    model.add(LSTM(units=train_data_X_length, return_sequences=True, activation='relu'))
+    model.add(LSTM(units=train_data_X_length, return_sequences=True, activation='relu'))
+    model.add(LSTM(units=pivot))
 
   
     model.compile(loss='mse', optimizer='rmsprop')
@@ -211,8 +212,7 @@ def compare_results(test_labels, test_pred):
     print("Prediction and Labels")
     print(test_pred, end='    ')
     print(test_labels)
-    
-    
+       
 def start_split_predict(number_of_split_datasets_possible, delimiter, bounded_data_dict):
     counter4 = 0
     counter3 = 0
@@ -238,8 +238,6 @@ def start_split_predict(number_of_split_datasets_possible, delimiter, bounded_da
     second_data_input = pd.DataFrame.from_dict(finished_data_dict, dtype='float')
     return second_data_input
     
-
-
 def calc_mean_value(mydict, delimiter, length):
     temp = {}
 
@@ -256,7 +254,7 @@ def test_if_bullshit_data(mydict):
     return True
 
 
-def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_labels):
+def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_label):
     train_data_X_length = len(train_data.columns)
     
     
@@ -301,11 +299,13 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
     return [test_pred, history]
 
 
+def create_metadata(bounded_data_dict : dict, pivot):
+    
+    data_raw = pd.DataFrame.from_dict(bounded_data_dict)
+    new_data = numpy.array(data_raw)
+    
+    print(new_data)
 
-def create_metadata(bounded_data_dict : dict):
-    
-    data_raw = pd.DataFrame.from_dict(bounded_data_dict, dtype='float')
-    
     train_data_X_length = len(data_raw.columns)
     train_data_Y_length = len(data_raw.index)
     
@@ -319,11 +319,12 @@ def create_metadata(bounded_data_dict : dict):
 
     test_labels = test_data.iloc[:, 0]
     test_data = test_data.iloc[:, 1:data_raw.columns.size] 
-
-    #train_data = numpy.array(train_data)
-    #train_labels = numpy.array(train_labels)
-    #test_data = numpy.array(test_data)
-    #test_labels = numpy.array(test_labels)
+    
+    train_data = numpy.array(train_data)
+    #train_data = train_data.reshape(1, pivot, 1)
+    train_labels = numpy.array(train_labels)
+    test_data = numpy.array(test_data)
+    test_labels = numpy.array(test_labels)
     
 
     return [train_data, train_labels, test_data, test_labels]
