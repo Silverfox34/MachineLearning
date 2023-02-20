@@ -1,7 +1,7 @@
 import tensorflow as tf
-from ImageDataLoader import ImageGenerator as IG
 import sys
 import numpy as np
+from UsefulFunctions import ImageGenerator as IG
 
 
 def main():
@@ -19,12 +19,12 @@ def main():
     #TRAINING_DIR = "C:/Users/LS_MFE/Desktop/rps"
     #VALIDATION_DIR = "C:/Users/LS_MFE/Desktop/rps-test-set"
     #training_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale = 1./255)
-    #validation_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale = 1./255)
+    validation_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale = 1./255)
 
     #train_generator = training_datagen.flow_from_directory(TRAINING_DIR, target_size=(150,150), class_mode='categorical')
     #validation_generator = validation_datagen.flow_from_directory(VALIDATION_DIR, target_size=(150,150), class_mode='categorical')
     
-    #validataion_dataset_paper = validation_datagen.flow_from_directory("YOUR PATH TO PAPER ONLY DATA, FOR TESTING PURPOSES", target_size=(150,150), class_mode='categorical')
+    validataion_dataset_paper = validation_datagen.flow_from_directory("C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/Paper_data", target_size=(150,150), class_mode='categorical')
     
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Conv2D(64, (3,3) , activation='relu', input_shape=(WIDTH, HEIGHT,3)))
@@ -43,17 +43,17 @@ def main():
 
 
 
-    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics='accuracy')
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics='categorical_accuracy')
 
     history = model.fit_generator(train_data, epochs=3, validation_data=val_data, verbose=1)
-    print(history)
+    #print(history)
 
     #Should only detect rock here
-    #classes = model.predict(val_data)
+    classes = model.predict(validataion_dataset_paper)
     
     
 
-    #print(classes)
+    print(classes)
 
 
 

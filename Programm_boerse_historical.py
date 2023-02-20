@@ -17,7 +17,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def main():
 
-    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks/'
+    helper_string = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/archive/Stocks_less/'
     onlyfiles = [f for f in listdir(helper_string) if isfile(join(helper_string, f))]
 
     all_dicts = defaultdict(list)
@@ -84,7 +84,7 @@ def main():
 
 
 
-    compare_results(test_labels, test_pred)
+    #compare_results(test_labels, test_pred)
 
 
 def compare_results(test_labels, test_pred):
@@ -171,14 +171,14 @@ def predict_stock_data(train_data : pd.DataFrame, train_labels, test_data, test_
 
     model.compile(loss='mse', optimizer='rmsprop')
 
-    history = model.fit(train_data, train_labels, batch_size=30, epochs = 1000,callbacks=[callback], verbose=0)
+    history = model.fit(train_data, train_labels, batch_size=30, epochs = 1000, callbacks=[callback], verbose=0)
 
     test_pred = model.predict(test_data)
 
 
 
-    #print(test_labels)
-    #print(test_pred)
+    print(test_labels)
+    print(test_pred)
 
     return [test_pred, history]
     #plot_two_dataframes_in_one_graph(test_labels, test_pred)
