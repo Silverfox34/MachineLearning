@@ -7,23 +7,60 @@ import os
 import time
 
 def main():
-    #begin = dt.date(2022, 12, 1)
-    #end = dt.date(2023, 2, 1)
-
-
-    actualize_files()
-    
-
-
-
-
-
-def actualize_files():
-    begin_date = get_last_date_from_files()
-    end_date = dt.date.today()
+    begin = dt.date(2022, 12, 10)
+    end = dt.date(2023, 2, 10)
     ticker_symbols = {'AAPL', 'MSFT', 'AMZN', 'ADBE','AAT','AAU',
                     'AB','ABBV','ABC','ABCB'}
     pair_list = create_key_val_pair(ticker_symbols)
+
+    [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
+    print(morning_numpy_array)
+    #actualize_files(ticker_symbols, pair_list)
+    pass
+
+def read_files(ticker_symbols, begin_date, end_date):
+    delta = end_date-begin_date
+    delta = delta.days
+    
+    counter = 0
+    #morning_numpy_array = np.empty([len(ticker_symbols), int(delta)])
+    #evening_numpy_array = np.empty([len(ticker_symbols), int(delta)])
+    morning_numpy_array = []
+    evening_numpy_array = []
+
+    for item in ticker_symbols:
+        file = open('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/mydata/'+str(item)+".txt").read()
+        lines = file.split("\n")
+
+        morning_list = []
+        evening_list = []
+        morning_list.append(str(item))
+        evening_list.append(str(item))
+
+        for line in lines:
+            
+            data = line.split(";")
+
+            if data[0] == '' or data[1] == '' or data[2] == '':
+                continue
+
+            morning_list.append(data[1])
+            evening_list.append(data[2])
+        
+        morning_numpy_array.append(np.array(morning_list))
+        evening_numpy_array.append(np.array(evening_list))
+
+        counter = counter + 1
+
+    return [np.array(morning_numpy_array), np.array(evening_numpy_array)]
+
+
+
+
+
+def actualize_files(ticker_symbols, pair_list):
+    begin_date = get_last_date_from_files()
+    end_date = dt.date.today()
     download_data_and_write_to_file(begin_date, end_date, ticker_symbols, pair_list)
 
 
