@@ -5,23 +5,57 @@ import numpy as np
 from datetime import date
 import os
 import time
+from keras.layers import Dense
+import keras
 
 def main():
     begin = dt.date(2022, 12, 10)
     end = dt.date(2023, 2, 10)
-    ticker_symbols = {'AAPL', 'MSFT', 'AMZN', 'ADBE','AAT','AAU',
-                    'AB','ABBV','ABC','ABCB'}
+    vector_size = 5
+
+    ticker_symbols = ['AAPL', 'MSFT', 'AMZN', 'ADBE','AAT','AAU',
+                    'AB','ABBV','ABC','ABCB']
     pair_list = create_key_val_pair(ticker_symbols)
 
     #actualize_files(ticker_symbols, pair_list)
     [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
-    print(morning_numpy_array)
+    sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size)
+    sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size)
+
+    create_neural_net_and_feed_it_yummy_yummy(sequenced_dataset_morning)
+
+def create_neural_net_and_feed_it_yummy_yummy(dataset : np.array):
+    stock_amount = dataset.shape[0]
+    vectors_amount = dataset.shape[1]
+    time_steps = dataset.shape[2]
+    model = keras.Sequential()
+
+   
+    
+    
 
 
-def create_sequence_dataset(seq_length : int):
+def create_sequence_dataset(numpy_array : np.array,seq_length : int):
+    sequence_list = []
+    big_sequence_list = []
+    mydict = {}
+    
 
+    for i in range(0, numpy_array.shape[0]):
+        #sequence_list.append(numpy_array[i][0])
 
-    pass
+        for j in range(1, numpy_array.shape[1]-1-seq_length):
+            sequence_list.append(numpy_array[i][j : j+seq_length])
+
+       
+        
+        big_sequence_list.append(np.array(sequence_list))
+        sequence_list = []
+
+    return np.array(big_sequence_list)
+        
+
+    
 
 
 def read_files(ticker_symbols, begin_date, end_date):
