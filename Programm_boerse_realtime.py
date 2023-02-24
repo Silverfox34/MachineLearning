@@ -13,10 +13,16 @@ def main():
                     'AB','ABBV','ABC','ABCB'}
     pair_list = create_key_val_pair(ticker_symbols)
 
+    #actualize_files(ticker_symbols, pair_list)
     [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
     print(morning_numpy_array)
-    #actualize_files(ticker_symbols, pair_list)
+
+
+def create_sequence_dataset(seq_length : int):
+
+
     pass
+
 
 def read_files(ticker_symbols, begin_date, end_date):
     delta = end_date-begin_date
@@ -44,8 +50,8 @@ def read_files(ticker_symbols, begin_date, end_date):
             if data[0] == '' or data[1] == '' or data[2] == '':
                 continue
 
-            morning_list.append(data[1])
-            evening_list.append(data[2])
+            morning_list.append(data[1].replace(" ",""))
+            evening_list.append(data[2].replace(" ",""))
         
         morning_numpy_array.append(np.array(morning_list))
         evening_numpy_array.append(np.array(evening_list))
