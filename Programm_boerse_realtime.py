@@ -5,7 +5,7 @@ import numpy as np
 from datetime import date
 import os
 import time
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 import keras
 
 def main():
@@ -21,18 +21,32 @@ def main():
     [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
     sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size)
     sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size)
+    X_train = sequenced_dataset_morning[1:]
+    Y_train = sequenced_dataset_morning[0]
+    create_neural_net_and_feed_it_yummy_yummy(X_train, Y_train)
 
-    create_neural_net_and_feed_it_yummy_yummy(sequenced_dataset_morning)
 
-def create_neural_net_and_feed_it_yummy_yummy(dataset : np.array):
-    stock_amount = dataset.shape[0]
-    vectors_amount = dataset.shape[1]
-    time_steps = dataset.shape[2]
+
+def create_neural_net_and_feed_it_yummy_yummy(X : np.array, Y : np.array):
+    stock_amount = X.shape[0]
+    vectors_amount = X.shape[1]
+    time_steps = X.shape[2]
+    dropout_rate = 0.4
+    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
+
     model = keras.Sequential()
+    model.add(Dense(units=time_steps, input_shape=(vectors_amount, time_steps)))
 
-   
+    for i in range(0, time_steps-2):
+        model.add(Dense(units=time_steps, activation='relu'))
+        model.add(Dropout(rate=dropout_rate))
+
+    model.compile(loss='mse', optimizer='adam')
+    history = model.fit(x=X, y=Y, epochs = 1000, callbacks=[early_stopping_callback])
     
     
+
+
 
 
 def create_sequence_dataset(numpy_array : np.array,seq_length : int):
