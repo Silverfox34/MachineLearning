@@ -8,6 +8,7 @@ import time
 from keras.layers import Dense, Dropout
 import keras
 from sklearn.model_selection import train_test_split
+import pandas as pd
 
 def main():
     begin = dt.date(2022, 12, 10)
@@ -22,11 +23,32 @@ def main():
     [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
     sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size)
     sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size)
-    X = sequenced_dataset_morning[1:]
-    Y = sequenced_dataset_morning[0]
+
+    [X_train, X_test, Y_train, Y_test] = create_train_test_split(sequenced_dataset_morning, ticker_symbols)
+    create_neural_net_and_feed_it_yummy_yummy(X_train, X_test, Y_train, Y_test)
+
+def create_train_test_split(numpy_dataset : np.array, ticker_symbols : list):  
+    split_var = -5
+    temp_list_train = []
+    temp_list_test = []
+    target : np.array = numpy_dataset[0]
+    input : np.array = numpy_dataset[1:]
+
+    Y_train = target[:split_var]
+    Y_test = target[target.shape[0] + split_var : target.shape[0]]
+
+    for i in range(0, input.shape[0]):
+        temp_list_train.append(input[i][:split_var])
+        temp_list_test.append(input[i][input.shape[0] + split_var : input.shape[0]]) 
+
+    X_train = np.array(temp_list_train)
+    X_test = np.array(temp_list_test)
+
+    return [X_train, X_test, Y_train, Y_test]
+
     
-    #X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1)
-    #create_neural_net_and_feed_it_yummy_yummy(X_train, X_test, Y_train, Y_test)
+
+
 
 
 
@@ -46,6 +68,7 @@ def create_neural_net_and_feed_it_yummy_yummy(X_train : np.array,  X_test : np.a
         model.add(Dropout(rate=dropout_rate))
 
     model.compile(loss='mse', optimizer='adam')
+    
     history = model.fit(x=X_train, y=Y_train, validation_data=(X_test, Y_test), epochs = 1000, callbacks=[early_stopping_callback])
     
     
