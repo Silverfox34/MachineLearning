@@ -5,7 +5,7 @@ import numpy as np
 from datetime import date
 import os
 import time
-from keras.layers import Dense, Dropout
+from keras.layers import Dense, Dropout, InputLayer
 import keras
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -69,7 +69,7 @@ def create_neural_net_and_feed_it_yummy_yummy(X_train : np.array,  X_test : np.a
     early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
 
     model = keras.Sequential()
-    model.add(Dense(units=time_steps, input_shape=(vectors_amount, time_steps)))
+    model.add(InputLayer(input_shape=(vectors_amount, time_steps)))
 
     for i in range(0, time_steps-2):
         model.add(Dense(units=time_steps, activation='relu'))
@@ -77,7 +77,7 @@ def create_neural_net_and_feed_it_yummy_yummy(X_train : np.array,  X_test : np.a
 
     model.compile(loss='mse', optimizer='adam')
     
-    history = model.fit(x=X_train, y=Y_train, batch_size=time_steps, validation_data=(X_test, Y_test), epochs = 1000, callbacks=[early_stopping_callback])
+    history = model.fit(x=X_train, y=Y_train, batch_size=vectors_amount, validation_data=(X_test, Y_test), epochs = 1000, callbacks=[early_stopping_callback])
     
     
 
