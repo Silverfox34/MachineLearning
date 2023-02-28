@@ -5,7 +5,7 @@ import numpy as np
 from datetime import date
 import os
 import time
-from keras.layers import Dense, Dropout, InputLayer
+from keras.layers import Dense, Dropout, InputLayer, Flatten
 import keras
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -64,22 +64,30 @@ def create_neural_net_and_feed_it_yummy_yummy(X_train : np.array,  X_test : np.a
     stock_amount = X_train.shape[0]
     vectors_amount = X_train.shape[1]
     time_steps = X_train.shape[2]
-    dropout_rate = 0.4
+    dropout_rate = 0.5
 
-    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=10, restore_best_weights=True)
+    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=200, restore_best_weights=True)
 
+    #print(Y_test.shape)
+    #print(X_test.shape)
+ 
     model = keras.Sequential()
     model.add(InputLayer(input_shape=(vectors_amount, time_steps)))
+    model.add(Flatten())
 
-    for i in range(0, time_steps-2):
-        model.add(Dense(units=time_steps, activation='relu'))
+    for i in range(0, time_steps):
+        model.add(Dense(units=time_steps, activation='sigmoid'))
         model.add(Dropout(rate=dropout_rate))
+    
+    model.add(Dense(units=time_steps))
 
-    model.compile(loss='mse', optimizer='adam')
+    model.compile(loss='mse', optimizer='rmsprop')
     
-    history = model.fit(x=X_train, y=Y_train, batch_size=vectors_amount, validation_data=(X_test, Y_test), epochs = 1000, callbacks=[early_stopping_callback])
+    history = model.fit(x=X_train, y=Y_train, batch_size=vectors_amount, validation_data=(X_test, Y_test), epochs=10000, callbacks=[early_stopping_callback])
     
-    
+    print(Y_test[0, :])
+    print("-----------------------------------")
+    print(model.predict(X_test[:]))
 
 
 
