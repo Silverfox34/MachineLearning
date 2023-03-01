@@ -2,13 +2,10 @@ import datetime as dt
 import urllib.request
 import json
 import numpy as np
-from datetime import date
-import os
+
 import time
-from keras.layers import Dense, Dropout, InputLayer, Flatten
+from keras.layers.core import Dense, Dropout, Flatten
 import keras
-from sklearn.model_selection import train_test_split
-import pandas as pd
 import sys
 
 def main():
@@ -19,17 +16,17 @@ def main():
   
     ticker_symbols = ['AAPL', 'MSFT', 'AMZN', 'ADBE','AAT','AAU', 'AB','ABBV','ABC','ABCB']
     #ticker_symbols = ['AAPL', 'MSFT', 'AMZN', 'ADBE', 'AAT']
-    #pair_list = create_key_val_pair(ticker_symbols)
+    pair_list = create_key_val_pair(ticker_symbols)
 
-    #actualize_files(ticker_symbols, pair_list)
-    [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
-    sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size)
-    sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size)
+    actualize_files(ticker_symbols, pair_list)
+    #[morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
+    #sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size)
+    #sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size)
     
 
-    [X_train, X_test, Y_train, Y_test] = create_train_test_split(sequenced_dataset_morning, ticker_symbols)
+    #[X_train, X_test, Y_train, Y_test] = create_train_test_split(sequenced_dataset_morning, ticker_symbols)
     
-    create_neural_net_and_feed_it_yummy_yummy(X_train, X_test, Y_train, Y_test)
+    #create_neural_net_and_feed_it_yummy_yummy(X_train, X_test, Y_train, Y_test)
 
 
 
@@ -66,28 +63,31 @@ def create_neural_net_and_feed_it_yummy_yummy(X_train : np.array,  X_test : np.a
     time_steps = X_train.shape[2]
     dropout_rate = 0.5
 
-    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=200, restore_best_weights=True)
+    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=75, restore_best_weights=True)
 
     #print(Y_test.shape)
     #print(X_test.shape)
- 
+    
+    #print(X_test[0, :, :])
+
     model = keras.Sequential()
-    model.add(InputLayer(input_shape=(vectors_amount, time_steps)))
+    model.add(Dense(units = vectors_amount*time_steps, input_shape = (vectors_amount, time_steps)))
     model.add(Flatten())
 
     for i in range(0, time_steps):
-        model.add(Dense(units=time_steps, activation='sigmoid'))
-        model.add(Dropout(rate=dropout_rate))
+        model.add(Dense(units = vectors_amount*time_steps, activation='sigmoid'))
+        model.add(Dropout(rate = dropout_rate))
     
-    model.add(Dense(units=time_steps))
+    model.add(Dense(units = time_steps))
 
-    model.compile(loss='mse', optimizer='rmsprop')
     
-    history = model.fit(x=X_train, y=Y_train, batch_size=vectors_amount, validation_data=(X_test, Y_test), epochs=10000, callbacks=[early_stopping_callback])
+    model.compile(loss='msle', optimizer='rmsprop')
     
-    print(Y_test[0, :])
+    history = model.fit(x=X_train, y=Y_train, batch_size=1, validation_data=(X_test, Y_test), epochs=10000, callbacks=[early_stopping_callback], shuffle=True)
+    
+    print(Y_test)
     print("-----------------------------------")
-    print(model.predict(X_test[:]))
+    print(model.predict(X_test))
 
 
 
@@ -155,7 +155,8 @@ def read_files(ticker_symbols, begin_date, end_date):
 
 
 def actualize_files(ticker_symbols, pair_list):
-    begin_date = get_last_date_from_files()
+    #begin_date = get_last_date_from_files()
+    begin_date = dt.date(2022, 5, 1)
     end_date = dt.date.today()
     download_data_and_write_to_file(begin_date, end_date, ticker_symbols, pair_list)
 
