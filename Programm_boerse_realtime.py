@@ -2,17 +2,26 @@ import datetime as dt
 import urllib.request
 import json
 import numpy as np
-
-import time
+import tensorflow as tf
 from keras.layers.core import Dense, Dropout, Flatten
 import keras
 import sys
+import math
+import matplotlib.pyplot as plt
+import os
+from sklearn.preprocessing import normalize
+from UsefulFunctions import HistoryPlotter as HP
+
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
 
 def main():
     np.set_printoptions(threshold=sys.maxsize)
     begin = dt.date(2022, 12, 10)
     end = dt.date(2023, 2, 10)
-    vector_size = 5
+    vector_size = 8
+    normalize_flag = False
+
   
     ticker_symbols = ['AAPL', 'MSFT', 'AMZN', 'ADBE','AAT','AAU', 'AB','ABBV','ABC','ABCB']
     #ticker_symbols = ['AAPL', 'MSFT', 'AMZN', 'ADBE', 'AAT']
@@ -20,12 +29,13 @@ def main():
 
     #actualize_files(ticker_symbols, pair_list)
     [morning_numpy_array, evening_numpy_array] = read_files(ticker_symbols, begin, end)
-    sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size)
-    sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size)
+    sequenced_dataset_morning = create_sequence_dataset(morning_numpy_array, vector_size, normalize_flag)
+    sequenced_dataset_evening = create_sequence_dataset(evening_numpy_array, vector_size, normalize_flag)
     
-
+    
+    
     [X_train, X_test, Y_train, Y_test] = create_train_test_split(sequenced_dataset_morning, ticker_symbols)
-    [X_train, X_test] = reshape_data_for_nn(X_train, X_test)
+    [X_train, X_test] = reshape_data_for_nn(X_train, X_test, normalize_flag)
     create_neural_net_and_feed_it_yummy_yummy(X_train, X_test, Y_train, Y_test, vector_size)
 
 
@@ -35,41 +45,70 @@ def main():
 def create_neural_net_and_feed_it_yummy_yummy(X_train : np.array,  X_test : np.array, Y_train : np.array, Y_test : np.array, vector_size):
     stock_amount = X_train.shape[0]
     data_length = X_train.shape[1]   
-    dropout_rate = 0.5
-    #print(np.reshape(a=X_test[0], newshape=(X_test[0].shape[0], 1)).shape)
+    dropout_rate = 0.3
+    #log_base = 2
+    
+    layer_size = 6
+    layer_number = 6
 
-
-    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=75, restore_best_weights=True)
-
-
-    model = keras.Sequential()
-    model.add(Dense(units = data_length, input_dim = data_length))
+    
+    early_stopping_callback = keras.callbacks.EarlyStopping(monitor='loss', patience=30, restore_best_weights=True)
     
 
-    for i in range(0, data_length):
-        model.add(Dense(units = data_length, activation='relu'))
+    model = keras.Sequential()
+
+
+    model.add(Dense(units = data_length, input_dim = data_length))
+    
+    for i in range(0, layer_number):
+        model.add(Dense(units = layer_size, activation='sigmoid'))
         model.add(Dropout(rate = dropout_rate))
     
     model.add(Dense(units = vector_size))
 
     
-    model.compile(loss='binary_crossentropy', optimizer='adam')
+    model.compile(loss='mse', optimizer='sgd', metrics='mean_absolute_error')
     
-    history = model.fit(x=X_train, y=Y_train, batch_size=1, validation_data=(X_test, Y_test), epochs=10000, callbacks=[early_stopping_callback], shuffle=True)
+    history = model.fit(x=X_train, y=Y_train, batch_size=1, validation_data=(X_test, Y_test), epochs=200, callbacks=[early_stopping_callback])
+
+    figure, axis = plt.subplots(5, 2)
+    my_predictions = []
     
-    #print(Y_test[0])
-    #print("-----------------------------------")
-    for i in range(0, vector_size-1):
-        print(Y_test[i])
-        print("-----------------------------------")
-        print(model.predict(np.reshape(a=X_test[i], newshape=(1, X_test[i].shape[0]))))
+    
+    for i in range(0, Y_test.shape[0]):
+        #print("Output as it should look like: ")
+        #print(Y_test[i])
+        #print("-----------------------------------")
+        X_test_reshaped_line = np.reshape(a=X_test[i], newshape=(1, X_test[i].shape[0]))
+
+        print("X_test[i] shape: ")
+        print(X_test_reshaped_line.shape)
+        print("-----------------------------")
+        my_pred = model.predict(X_test_reshaped_line)
+        my_predictions.append(my_pred)
+        print("Prediction: ")
+        print(my_pred.shape)
+
+        axis[i, 0].plot(Y_test[i])
+        axis[i, 0].set_title("Test-set values")
+        
+        axis[i, 1].plot(my_predictions[i][0])
+        axis[i, 1].set_title("Predicted values")
+
         print("############################################\n############################################")
 
+    plt.show()
 
 
-def reshape_data_for_nn(X_train : np.array, X_test : np.array):
-    X_train = np.reshape(a=X_train, newshape=(X_train.shape[0], X_train.shape[1]*X_train.shape[2]))
-    X_test = np.reshape(a=X_test, newshape=(X_test.shape[0], X_test.shape[1]*X_test.shape[2]))
+
+def reshape_data_for_nn(X_train : np.array, X_test : np.array, normalize_flag):
+
+    if normalize_flag:
+        X_train = np.reshape(a=X_train, newshape=(X_train.shape[0], X_train.shape[1]*X_train.shape[3]))
+        X_test = np.reshape(a=X_test, newshape=(X_test.shape[0], X_test.shape[1]*X_test.shape[3]))
+    else:
+        X_train = np.reshape(a=X_train, newshape=(X_train.shape[0], X_train.shape[1]*X_train.shape[2]))
+        X_test = np.reshape(a=X_test, newshape=(X_test.shape[0], X_test.shape[1]*X_test.shape[2]))
     
     return [X_train, X_test]
     
@@ -98,7 +137,7 @@ def create_train_test_split(numpy_dataset : np.array, ticker_symbols : list):
 
 
 
-def create_sequence_dataset(numpy_array : np.array, seq_length : int):
+def create_sequence_dataset(numpy_array : np.array, seq_length : int, normalize_flag):
     sequence_list = []
     big_sequence_list = []
     
@@ -106,10 +145,15 @@ def create_sequence_dataset(numpy_array : np.array, seq_length : int):
     for i in range(0, numpy_array.shape[0]-seq_length):
 
         for j in range(0, numpy_array.shape[1]):
-            sequence_list.append(numpy_array[i : i+seq_length, j])
-        
-        
+            temp = numpy_array[i : i+seq_length, j]
 
+            if(normalize_flag):
+                temp = normalize([temp])
+
+
+            sequence_list.append(temp)
+        
+        
         
         big_sequence_list.append(np.array(sequence_list, dtype='float'))
         sequence_list = []
@@ -162,9 +206,24 @@ def read_files(ticker_symbols, begin_date, end_date):
 
 def actualize_files(ticker_symbols, pair_list):
     #begin_date = get_last_date_from_files()
-    begin_date = dt.date(2022, 12, 1)
+    begin_date = dt.date(2018, 4, 1)
     end_date = dt.date.today()
+    #end_date = get_first_date_from_files()
     download_data_and_write_to_file(begin_date, end_date, ticker_symbols, pair_list)
+
+def get_first_date_from_files():
+    file = open('C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/mydata/'+"AAU"+".txt").read()
+    lines = file.split("\n")
+    lines = lines[0].split(";")
+    lines = lines[0].split("-")
+
+    i0 = int(lines[0])
+    i1 = int(lines[1])
+    i2 = int(lines[2])
+    temp = dt.date(i0, i1, i2)
+    temp = temp + dt.timedelta(-1)
+
+    return temp
 
 
 def get_last_date_from_files():
@@ -185,21 +244,22 @@ def download_data_and_write_to_file(begin, end, ticker_symbols, pair_list : dict
     delta = end - begin
     downloaded_data = np.zeros(shape=[delta.days+1, len(ticker_symbols)])
     downloaded_data[0,:] = list(pair_list.keys())
-    counter = 0
+    #counter = 0
 
 
     for item in ticker_symbols:
         dest = 'C:/Users/Moritz/Desktop/Allgemeines/MachineLearning/mydata/'+str(item)+".txt"
         temp = begin
+        api_key = 'msEs_vaY1U3zMeJz3dWpnalk16rzWNze'
 
         while temp <= end:
-            counter = counter + 1
+            #counter = counter + 1
             try:
                 if temp.weekday() != 6 and temp.weekday() != 5:
 
                     
                     
-                    myUrl = 'https://api.polygon.io/v1/open-close/'+str(item)+'/'+str(temp)+'?adjusted=true&apiKey=A9ucsBTluZJyBDw2rZImNSl1sIycyKhd'
+                    myUrl = 'https://api.polygon.io/v1/open-close/'+str(item)+'/'+str(temp)+'?adjusted=true&apiKey='+api_key
                     response = urllib.request.urlopen(myUrl)
                     response_as_string = response.read()
                     jsonObject = json.loads(response_as_string)
@@ -214,10 +274,10 @@ def download_data_and_write_to_file(begin, end, ticker_symbols, pair_list : dict
             except:
                 pass
             
-            if counter == 5:
-                counter = 0
-                print("Sleeping")
-                time.sleep(70)
+            #if counter == 5:
+                #counter = 0
+                #print("Sleeping")
+                #time.sleep(70)
 
                 
 
